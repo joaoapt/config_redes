@@ -1,0 +1,7 @@
+usuario: icaro
+senha senac@123
+enable: 123@Mudar
+192.168.1.1
+
+mariadb -u joao -p
+vr:G/#S8T7i5
