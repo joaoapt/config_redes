@@ -1,23 +1,21 @@
+import os
 from netmiko import ConnectHandler, NetmikoTimeoutException, NetmikoAuthenticationException
 
 def conectar_dispositivo(device):
-    """
-    Conecta ao roteador Cisco via SSH usando Netmiko.
-    """
     try:
-        print(f"\n🔌 Conectando ao dispositivo {device['nm_hostname']} ({device['nm_ip_address']})...")
+        print(f"\n Conectando ao dispositivo {device['nm_hostname']} ({device['nm_ip_address']})...")
 
         cisco = {
             "device_type": "cisco_ios",
             "host": device["nm_ip_address"],
             "username": device["nm_usuario"],
             "password": device["pw_password"],
-            "secret": "",  
-            "timeout": 15,
+             "secret": device["pw_enable"],
+            "timeout": 60,
         }
 
         net_connect = ConnectHandler(**cisco)
-
+        net_connect.enable()
         if cisco["secret"]:
             net_connect.enable()
 
@@ -35,9 +33,6 @@ def conectar_dispositivo(device):
 
 
 def fazer_backup(net_connect, cursor, db, device):
-    """
-    Executa o 'show running-config', salva no banco e gera arquivo local.
-    """
     try:
         print(f"\n Iniciando backup do dispositivo {device['nm_hostname']}...")
 
