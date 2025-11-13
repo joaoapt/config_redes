@@ -1,0 +1,78 @@
+usuario: icaro
+senha senac@123
+enable: 123@Mudar
+192.168.1.1
+
+mariadb -u joao -p
+vr:G/#S8T7i5
+
+
+
+
+
+## 🧠 O que é o módulo `os` no Python
+
+`os` é um módulo **padrão** do Python (ou seja, já vem instalado por padrão) que permite o seu programa **interagir com o sistema operacional**.
+
+“**os**” vem de *Operating System*.
+
+---
+
+## ⚙️ O que ele faz (principais usos)
+
+O `os` serve pra várias tarefas, como:
+
+| Função                                | O que faz                                                      | Exemplo prático                      |
+| ------------------------------------- | -------------------------------------------------------------- | ------------------------------------ |
+| `os.makedirs(caminho, exist_ok=True)` | Cria uma pasta (e não dá erro se ela já existir)               | Criar a pasta `backup/` ou `config/` |
+| `os.path.join(pasta, arquivo)`        | Junta caminhos de forma segura (independente de Windows/Linux) | Gera `backup/backup_R1.txt`          |
+| `os.remove(arquivo)`                  | Apaga um arquivo                                               | Apagar logs antigos                  |
+| `os.listdir(pasta)`                   | Lista arquivos dentro de uma pasta                             | Mostrar todos os backups disponíveis |
+| `os.getcwd()`                         | Mostra o diretório atual                                       | Saber onde o script está rodando     |
+
+---
+
+## 📁 No seu projeto, ele é usado assim:
+
+Trecho do código:
+
+```python
+backup_dir = "backup"
+os.makedirs(backup_dir, exist_ok=True)
+filename = os.path.join(backup_dir, f"backup_{safe_hostname}.txt")
+```
+
+O que isso faz:
+
+1. Cria uma pasta chamada **backup/** se ainda não existir.
+2. Gera um caminho completo para o arquivo dentro dela (`backup/backup_R1.txt`).
+3. Isso evita erros e funciona tanto no **Linux** quanto no **Windows**.
+
+---
+
+## 💡 Sem `os`, você teria que fazer assim:
+
+```python
+backup_dir = "backup"
+if not os.path.exists(backup_dir):
+    os.mkdir(backup_dir)
+filename = backup_dir + "/" + "backup_R1.txt"
+```
+
+Ou pior, montar os caminhos manualmente com `"/"`, o que **quebraria no Windows** (que usa `\`).
+
+Por isso `os` é o jeito **correto e portátil** de lidar com arquivos e pastas.
+
+---
+
+## ✅ Resumo
+
+| Função do `os` no seu código       | Motivo                                    |
+| ---------------------------------- | ----------------------------------------- |
+| Criar pastas automaticamente       | Garantir que “backup” ou “config” existam |
+| Gerar caminhos de arquivo seguros  | Evitar erros entre sistemas               |
+| Evitar ter que usar caminhos fixos | Tornar o código mais limpo e portátil     |
+
+---
+
+Quer que eu te mostre **como ficaria seu código sem usar `os`**, só pra você ver a diferença (menos seguro e mais feio, mas dá pra comparar)?

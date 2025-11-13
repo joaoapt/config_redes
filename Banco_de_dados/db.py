@@ -1,4 +1,3 @@
-import mysql.connector
 import mariadb
 
 
@@ -10,7 +9,7 @@ def conectar_banco():
             password="1234arch",
             database="redes_db"
         )
-        print("TÁ FUNCIONADO PORRA COM SUCESSO!!!!")
+        print("Banco de Dados está funcionando com SUCESSO!!!!")
         return Ban
     except mariadb.Error as e:
         print(f"Erro ao conectar: {e} :(")
