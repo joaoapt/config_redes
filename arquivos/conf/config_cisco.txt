@@ -1,0 +1,19 @@
+configure terminal
+Enter configuration commands, one per line.  End with CNTL/Z.
+lol(config)#hostname lol
+lol(config)#enable secret 1234
+lol(config)#username asdf privilege 15 secret 1234
+lol(config)#ip domain-name lol
+lol(config)#line vty 0 4
+lol(config-line)#login local
+lol(config-line)#transport input ssh
+lol(config-line)#exit
+lol(config)#interface vlan 1
+lol(config-if)#ip address 192.168.1.16 255.255.255.0
+lol(config-if)#no shutdown
+lol(config-if)#exit
+lol(config)#end
+lol#wr
+Building configuration...
+[OK]
+lol#

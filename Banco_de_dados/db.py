@@ -1,4 +1,6 @@
 import mariadb
+import socket
+from datetime import datetime
 
 
 def conectar_banco():
@@ -7,7 +9,8 @@ def conectar_banco():
             host="127.0.0.1",
             user="joao",
             password="1234arch",
-            database="redes_db"
+            database="redes_db",
+            unix_socket="/run/mysqld/mysqld.sock"  # Configuração do socket adicionada
         )
         print("Banco de Dados está funcionando com SUCESSO!!!!")
         return Ban
@@ -16,9 +19,9 @@ def conectar_banco():
         exit()
 
 
-
-
 # dml Device
+Ban = conectar_banco()
+cursor = Ban.cursor()
 
 def cadastro_device(hostname, fabricante, usuario, ip, password, enable):
     now = datetime.now()
@@ -27,7 +30,7 @@ def cadastro_device(hostname, fabricante, usuario, ip, password, enable):
         (hostname, fabricante, usuario, ip, password, enable)
     )
     Ban.commit()
-    print(f"Dispositivo '{hostname}' adicionado com SUCESSO!!!!!!!")
+
 
 def busca_device():
     cursor.execute("SELECT * FROM device_tb")

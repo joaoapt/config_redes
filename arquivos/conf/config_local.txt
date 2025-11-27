@@ -1,0 +1,27 @@
+configure terminal
+Enter configuration commands, one per line.  End with CNTL/Z.
+sw(config)#hostname local
+local(config)#            enable secret 1234
+local(config)#            username admin_senac privilege 15 secret 1234
+local(config)#            ip domain-name
+% Incomplete command.
+
+local(config)#            line vty 0 4
+local(config-line)#            login local
+local(config-line)#            transport input ssh
+local(config-line)#            exit
+local(config)#            interface
+% Incomplete command.
+
+local(config)#            ip address
+% Incomplete command.
+
+local(config)#            no shutdown
+% Incomplete command.
+
+local(config)#            end
+local#            wr
+Building configuration...
+[OK]
+local#
+local#

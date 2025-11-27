@@ -3,7 +3,6 @@ from função.devices import adicionar_device, escolher_device
 from função.configuração import enviar_configuracao_ssh, gerenciar_configuracoes
 from Banco_de_dados.db import conectar_banco
 
-
 def main():
     db = conectar_banco()
     cursor = db.cursor(dictionary=True)
@@ -27,18 +26,15 @@ def main():
                     while True:
                         print(f"\n=== Ações para {device['nm_hostname']} ===")
                         print("1 - Fazer backup do dispositivo")
-                        print("2 - Enviar comandos de configuração")
-                        print("3 - Voltar ao menu principal")
+                        print("2 - Voltar ao menu principal")
                         acao = input("> ")
 
                         if acao == "1":
                             fazer_backup(net_connect, cursor, db, device)
                         elif acao == "2":
-                            enviar_configuracao(net_connect, device, cursor, db)
-                        elif acao == "3":
                             break
                         else:
-                            print("❌ Ação inválida.")
+                            print("!!!Ação inválida.!!!")
                     net_connect.disconnect()
 
         elif opcao == "3":

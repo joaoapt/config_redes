@@ -1,4 +1,5 @@
 import os
+import datetime
 from netmiko import ConnectHandler, NetmikoTimeoutException, NetmikoAuthenticationException
 
 def conectar_dispositivo(device):
@@ -10,7 +11,7 @@ def conectar_dispositivo(device):
             "host": device["nm_ip_address"],
             "username": device["nm_usuario"],
             "password": device["pw_password"],
-             "secret": device["pw_enable"],
+            "secret": device["pw_enable"],
             "timeout": 60,
         }
 
@@ -44,13 +45,13 @@ def fazer_backup(net_connect, cursor, db, device):
         sql = "INSERT INTO backup_tb (device_id, tx_backup) VALUES (%s, %s)"
         cursor.execute(sql, (device["id_device"], output))
         db.commit()
+     
+        data_hora = datetime.datetime.now().strftime("%d-%m-%Y_%H:%M")
 
-        backup_dir = "backup"
-        os.makedirs(backup_dir, exist_ok=True)
-
-        
+        backup_dir = os.path.expanduser("~/Documentos/projetos/Python/PI/arquivos/backups")
+        os.makedirs(backup_dir, exist_ok=True) #dentro do diretorio arquivos será gerado o diretorio backup 
         safe_hostname = device['nm_hostname'].replace(" ", "_")
-        filename = os.path.join(backup_dir, f"backup_{safe_hostname}.txt")
+        filename = os.path.join(backup_dir, f"BK_{safe_hostname}_{data_hora}.txt")
 
         # Salvar 
         with open(filename, "w") as f:
