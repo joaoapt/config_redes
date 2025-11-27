@@ -1,5 +1,25 @@
 import os
+import ipaddress
+import datetime
+from textwrap import dedent
 from netmiko import ConnectHandler, NetmikoTimeoutException, NetmikoAuthenticationException
+
+
+def validar_ip(ip):
+    try:
+        ipaddress.ip_address(ip)
+        return True
+    except:
+        return False
+
+
+def validar_mask(mask):
+    try:
+        ipaddress.IPv4Network(f"10.0.0.0/{mask}", strict=False)
+        return True
+    except:
+        return False
+
 
 def enviar_configuracao_ssh(cursor, db):
     cursor.execute("SELECT * FROM device_tb")
@@ -53,20 +73,21 @@ def enviar_configuracao_ssh(cursor, db):
             output = net_connect.send_config_set(comandos)
             print(output)
 
-        
             sql = "INSERT INTO backup_tb (device_id, tx_backup) VALUES (%s, %s)"
             cursor.execute(sql, (device_id, f"Config enviada:\n{output}"))
             db.commit()
 
+            data_hora = datetime.datetime.now().strftime("%d-%m-%Y_%H:%M")
 
-            os.makedirs("config_log", exist_ok=True)
-            safe_hostname = device["nm_hostname"].replace(" ", "_")
-            filename = os.path.join("config_log", f"config_{safe_hostname}.txt")
+            config_dir = os.path.expanduser("~/Documentos/projetos/Python/PI/arquivos/conf")
+            os.makedirs(config_dir, exist_ok=True)
+            safe_hostname = device['nm_hostname'].replace(" ", "_")
+            nm_back = os.path.join(config_dir, f"config_{safe_hostname}_{data_hora}.txt")
 
-            with open(filename, "w") as f:
+            with open(nm_back, "w") as f:
                 f.write(output)
 
-            print(f"\n Configuração enviada e salva em: {filename}")
+            print(f"\n Configuração enviada e salva em: {nm_back}")
 
             net_connect.disconnect()
 
@@ -81,43 +102,115 @@ def enviar_configuracao_ssh(cursor, db):
         print(" ID inválido. Digite um número válido.")
 
 
+
 def gerenciar_configuracoes(cursor, db):
+
     while True:
+        cursor.execute("SELECT * FROM device_tb")
+        dispositivos = cursor.fetchall()
+
         print("\n=== Gerenciamento de Configurações ===")
         print("1 - Criar nova configuração completa")
         print("2 - Listar configurações existentes")
         print("3 - Deletar uma configuração")
-        print("4 - Voltar ao menu principal")
-        print("5 - Enviar configuração para o dispositivo")  
+        print("4 - Enviar configuração para o dispositivo")
+        print("5 - Voltar ao menu principal")
         opcao = input("> ")
 
         if opcao == "1":
-            device_id = input("ID do dispositivo: ")
+            print("\n=== Dispositivos disponíveis ===")
+            for d in dispositivos:
+                print(f"{d['id_device']} - {d['nm_hostname']} ({d['nm_ip_address']}) - {d['nm_fabricante']}")
 
-            print("\n Vamos montar a configuração do roteador:")
-            hostname = input("Hostname do roteador: ")
-            usuario = input("Usuário admin: ")
-            senha_usuario = input("Senha do usuário admin: ")
-            senha_enable = input("Senha ENABLE: ")
-            ip_int = input("Interface (ex: GigabitEthernet0/0): ")
-            ip_addr = input("Endereço IP (ex: 192.168.1.1): ")
-            mask = input("Máscara (ex: 255.255.255.0): ")
+            device_id = input("\n ID do dispositivo: ")
 
-            comandos = f"""hostname {hostname}
-            enable secret {senha_enable}
-            username {usuario} privilege 15 secret {senha_usuario}
+            print("\n Criação de usuário Admin:")
+            hostname = input("Hostname: ")
+            adm = input("Usuário admin: ")
+            senha = input("Senha do usuário admin: ")
+            enable = input("Senha ENABLE: ")
+
+            print("\n!!! ATENÇÃO: ISSO PODE MUDAR O IP PERMANENTEMENTE !!!")
+            dominio = input("Nome do domínio SSH: ")
+
+            # ===== Validação de IP =====
+            while True:
+                ip_addr = input("Endereço IP (ex: 192.168.1.1): ")
+                if validar_ip(ip_addr):
+                    break
+                print(" IP inválido. Tente novamente.\n")
+
+            # ===== Validação de máscara =====
+            while True:
+                mask = input("Máscara (ex: 255.255.255.0): ")
+                if validar_mask(mask):
+                    break
+                print(" Máscara inválida. Tente novamente.\n")
+
+            # ===== Pergunta se é switch ou roteador =====
+            tipo = input("\nO dispositivo é um switch? (s/n): ").lower()
+
+            porta = ""
+            vlan = ""
+
+            # === SWITCH: perguntar VLAN ===
+            if tipo == "s":
+                while True:
+                    vlan = input("Digite a VLAN de gerenciamento (ex: 1, 10, 20): ")
+
+                    if vlan.isdigit() and 1 <= int(vlan) <= 4094:
+                        break
+                    print(" VLAN inválida! Digite um número entre 1 e 4094.\n")
+
+            # === ROTEADOR: perguntar interface ===
+            elif tipo == "n":
+                porta = input("Interface física (ex: GigabitEthernet0/0): ").strip()
+
+            else:
+                print(" Opção inválida! Digite apenas 's' ou 'n'.")
+                continue
+
+            # ==== Geração da configuração ====
+            comandos = dedent(f"""
+            hostname {hostname}
+            enable secret {enable}
+            username {adm} privilege 15 secret {senha}
+            ip domain-name {dominio}
             line vty 0 4
-            login local
-            transport input ssh
-            interface {ip_int}
-            ip address {ip_addr} {mask}
-            no shutdown
+             login local
+             transport input ssh
+            exit
+            """)
+
+            # ===== SWITCH → VLAN escolhida =====
+            if tipo == "s":
+                comandos += dedent(f"""
+                interface vlan {vlan}
+                 ip address {ip_addr} {mask}
+                 no shutdown
+                exit
+                """)
+
+            # ===== ROTEADOR → Interface física =====
+            elif tipo == "n":
+                comandos += dedent(f"""
+                interface {porta}
+                 ip address {ip_addr} {mask}
+                 no shutdown
+                exit
+                """)
+
+            comandos += dedent("""
             end
             wr
-            """
+            """)
+
+            # Remove espaços extras
+            comandos = "\n".join([linha.strip() for linha in comandos.splitlines() if linha.strip()])
 
             print("\nConfiguração gerada:\n")
             print(comandos)
+
             confirmar = input("Deseja salvar essa configuração? (s/n): ").lower()
             if confirmar != "s":
                 print(" Configuração cancelada.")
@@ -151,10 +244,11 @@ def gerenciar_configuracoes(cursor, db):
             print(" Configuração removida com sucesso!")
 
         elif opcao == "4":
-            break
+            enviar_configuracao_ssh(cursor, db)
 
         elif opcao == "5":
-            enviar_configuracao_ssh(cursor, db)  
+            break
 
         else:
             print(" Opção inválida.")
+            
